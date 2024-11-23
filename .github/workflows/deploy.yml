@@ -31,27 +31,53 @@ jobs:
       run: |
         tar -czf dist.tar.gz dist
 
-    # Копіювання збірки на сервер
-    - name: Deploy to server
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_KEY }}
-        source: "dist.tar.gz"
-        target: "~/vuejs-app"
+    # Запуск локальних контейнерів для Prometheus і Grafana
+    - name: Setup Docker Compose for Prometheus and Grafana
+      run: |
+        # Створення Docker Compose файлу
+        echo "
+        version: '3'
+        services:
+          prometheus:
+            image: prom/prometheus:latest
+            container_name: prometheus
+            ports:
+              - 9090:9090
+            volumes:
+              - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
-    # Розгортання на сервері
-    - name: Run deployment script
-      uses: appleboy/ssh-action@v0.1.7
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_KEY }}
-        script: |
-          cd ~/vuejs-app
-          tar -xzf dist.tar.gz
-          docker build -t vuejs-app .
-          docker stop vuejs-app || true
-          docker rm vuejs-app || true
-          docker run -d --name vuejs-app -p 80:80 vuejs-app
+          grafana:
+            image: grafana/grafana:latest
+            container_name: grafana
+            ports:
+              - 3000:3000
+            environment:
+              - GF_SECURITY_ADMIN_PASSWORD=admin
+            depends_on:
+              - prometheus
+            networks:
+              - monitoring
+
+        networks:
+          monitoring:
+            driver: bridge
+        " > docker-compose.yml
+
+        # Створення файлу конфігурації Prometheus
+        echo "
+        global:
+          scrape_interval: 15s
+        scrape_configs:
+          - job_name: 'vuejs-app'
+            static_configs:
+              - targets: ['host.docker.internal:80']
+        " > prometheus.yml
+
+        # Запуск контейнерів
+        docker-compose up -d
+
+    # Зупинка контейнерів після завершення роботи
+    - name: Stop Docker containers
+      run: |
+        docker-compose down
+
