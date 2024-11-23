@@ -1,0 +1,57 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Виконується на основній гілці
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Клонування репозиторію
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Встановлення Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    # Встановлення залежностей та збірка проєкту
+    - name: Install and build
+      run: |
+        npm install
+        npm run build
+
+    # Архівування збірки
+    - name: Archive production build
+      run: |
+        tar -czf dist.tar.gz dist
+
+    # Копіювання збірки на сервер
+    - name: Deploy to server
+      uses: appleboy/scp-action@v0.2.1
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_KEY }}
+        source: "dist.tar.gz"
+        target: "~/vuejs-app"
+
+    # Розгортання на сервері
+    - name: Run deployment script
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_KEY }}
+        script: |
+          cd ~/vuejs-app
+          tar -xzf dist.tar.gz
+          docker build -t vuejs-app .
+          docker stop vuejs-app || true
+          docker rm vuejs-app || true
+          docker run -d --name vuejs-app -p 80:80 vuejs-app
