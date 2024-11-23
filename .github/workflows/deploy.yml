@@ -31,10 +31,16 @@ jobs:
       run: |
         tar -czf dist.tar.gz dist
 
-    # Запуск локальних контейнерів для Prometheus і Grafana
-    - name: Setup Docker Compose for Prometheus and Grafana
+    # Встановлення Docker Compose
+    - name: Install Docker Compose
       run: |
-        # Створення Docker Compose файлу
+        sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
+
+    # Створення Docker Compose файлу
+    - name: Create Docker Compose file
+      run: |
         echo "
         version: '3'
         services:
@@ -45,7 +51,7 @@ jobs:
               - 9090:9090
             volumes:
               - ./prometheus.yml:/etc/prometheus/prometheus.yml
-
+        
           grafana:
             image: grafana/grafana:latest
             container_name: grafana
@@ -57,13 +63,15 @@ jobs:
               - prometheus
             networks:
               - monitoring
-
+        
         networks:
           monitoring:
             driver: bridge
         " > docker-compose.yml
 
-        # Створення файлу конфігурації Prometheus
+    # Створення файлу конфігурації Prometheus
+    - name: Create Prometheus configuration file
+      run: |
         echo "
         global:
           scrape_interval: 15s
@@ -73,11 +81,13 @@ jobs:
               - targets: ['host.docker.internal:80']
         " > prometheus.yml
 
-        # Запуск контейнерів
+    # Запуск контейнерів
+    - name: Start Docker containers
+      run: |
         docker-compose up -d
 
-    # Зупинка контейнерів після завершення роботи
-    - name: Stop Docker containers
+    # Перевірка статусу контейнерів
+    - name: Check Docker containers status
       run: |
-        docker-compose down
+        docker ps
 
