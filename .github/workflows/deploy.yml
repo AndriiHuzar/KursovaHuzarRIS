@@ -58,6 +58,12 @@ jobs:
         run: |
           docker-compose up -d
 
+      # Затримка для перевірки
+      - name: Wait for verification
+        run: |
+          echo "Waiting for 30 seconds to verify the application..."
+          sleep 30
+
       # Перевірка статусу контейнерів
       - name: Check Docker containers status
         run: |
