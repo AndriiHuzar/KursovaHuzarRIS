@@ -51,7 +51,6 @@ jobs:
                 - 9090:9090
               volumes:
                 - ./prometheus.yml:/etc/prometheus/prometheus.yml
-
             grafana:
               image: grafana/grafana:latest
               container_name: grafana
@@ -63,7 +62,6 @@ jobs:
                 - prometheus
               networks:
                 - monitoring
-
           networks:
             monitoring:
               driver: bridge
@@ -91,10 +89,10 @@ jobs:
         run: |
           docker ps
 
-      # Передача артефакту на Ubuntu
+      # Передача артефакту на локальну ОС Ubuntu
       - name: Transfer artifact to Ubuntu
         run: |
-          scp -o StrictHostKeyChecking=no dist.tar.gz ${{ secrets.UBUNTU_USER }}@${{ secrets.UBUNTU_HOST }}:/home/huzar/Documenrs
+          scp -o StrictHostKeyChecking=no dist.tar.gz ${{ secrets.UBUNTU_USER }}@${{ secrets.UBUNTU_HOST }}:/home/huzar/Vue-Pinia-Store
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         shell: bash
