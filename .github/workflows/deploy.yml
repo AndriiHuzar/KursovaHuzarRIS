@@ -94,7 +94,7 @@ jobs:
       # Передача артефакту на Ubuntu
       - name: Transfer artifact to Ubuntu
         run: |
-          scp -o StrictHostKeyChecking=no dist.tar.gz ${{ secrets.UBUNTU_USER }}@${{ secrets.UBUNTU_HOST }}:/path/to/save/artifact/
+          scp -o StrictHostKeyChecking=no dist.tar.gz ${{ secrets.UBUNTU_USER }}@${{ secrets.UBUNTU_HOST }}:/home/huzar/Documenrs
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         shell: bash
