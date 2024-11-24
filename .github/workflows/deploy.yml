@@ -38,49 +38,23 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
-      # Створення Docker Compose файлу
-      - name: Create Docker Compose file
+      # Створення Docker Compose файлу для Vue.js
+      - name: Create Docker Compose file for Vue.js
         run: |
           echo "
           version: '3'
           services:
-            prometheus:
-              image: prom/prometheus:latest
-              container_name: prometheus
+            vue-app:
+              image: nginx:alpine
+              container_name: vue-app
               ports:
-                - 9090:9090
+                - 9001:80
               volumes:
-                - ./prometheus.yml:/etc/prometheus/prometheus.yml
-            grafana:
-              image: grafana/grafana:latest
-              container_name: grafana
-              ports:
-                - 3000:3000
-              environment:
-                - GF_SECURITY_ADMIN_PASSWORD=admin
-              depends_on:
-                - prometheus
-              networks:
-                - monitoring
-          networks:
-            monitoring:
-              driver: bridge
+                - ./dist:/usr/share/nginx/html
           " > docker-compose.yml
 
-      # Створення файлу конфігурації Prometheus
-      - name: Create Prometheus configuration file
-        run: |
-          echo "
-          global:
-            scrape_interval: 15s
-          scrape_configs:
-            - job_name: 'vuejs-app'
-              static_configs:
-                - targets: ['host.docker.internal:80']
-          " > prometheus.yml
-
-      # Запуск контейнерів
-      - name: Start Docker containers
+      # Запуск Docker контейнера
+      - name: Start Vue.js application
         run: |
           docker-compose up -d
 
@@ -88,11 +62,3 @@ jobs:
       - name: Check Docker containers status
         run: |
           docker ps
-
-      # Передача артефакту на локальну ОС Ubuntu
-      - name: Transfer artifact to Ubuntu
-        run: |
-          scp -o StrictHostKeyChecking=no dist.tar.gz ${{ secrets.UBUNTU_USER }}@${{ secrets.UBUNTU_HOST }}:/home/huzar/Vue-Pinia-Store
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        shell: bash
