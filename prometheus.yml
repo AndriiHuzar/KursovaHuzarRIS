@@ -2,14 +2,18 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'vue-app'
+  - job_name: 'cadvisor'
     static_configs:
-      - targets: ['localhost:8080']
+      - targets: ['cadvisor:8081']
 
   - job_name: 'node_exporter'
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ['node_exporter:9100']
 
-  - job_name: 'cadvisor'
+  - job_name: 'vue_app'
     static_configs:
-      - targets: ['localhost:8081']
+      - targets: ['vue_app:9001']
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
